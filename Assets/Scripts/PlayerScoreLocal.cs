@@ -4,11 +4,18 @@ public class PlayerScoreLocal : MonoBehaviour
 {
     public int Score { get; private set; }
 
-    private void OnTriggerEnter2D(Collider2D other)
+    void Awake()
     {
-        if (!other.CompareTag("Coin")) return;
+        Score = 0;
+    }
 
-        Destroy(other.gameObject);
+    public void ResetScore()
+    {
+        Score = 0;
+    }
+
+    public void AddPoint()
+    {
         Score++;
         Debug.Log($"{gameObject.name} score: {Score}");
     }

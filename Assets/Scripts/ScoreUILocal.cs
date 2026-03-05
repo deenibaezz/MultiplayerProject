@@ -18,11 +18,6 @@ public class ScoreUILocal : MonoBehaviour
         int a = playerA.Score;
         int b = playerB.Score;
 
-        string leader =
-            a == b ? "Tied" :
-            a > b ? "Player A winning" :
-                    "Player B winning";
-
-        text.text = $"Player A: {a}\nPlayer B: {b}\n{leader}";
+        text.text = $"Player A: {a}\nPlayer B: {b}";
     }
 }
