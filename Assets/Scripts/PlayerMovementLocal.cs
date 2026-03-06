@@ -1,12 +1,9 @@
+using Unity.Netcode;
 using UnityEngine;
 
-public class PlayerMovementLocal : MonoBehaviour
+public class PlayerMovementLocal : NetworkBehaviour
 {
-    public enum ControlScheme { WASD, Arrows }
-
-    [SerializeField] private ControlScheme controls;
     [SerializeField] private float speed = 6f;
-
     private Rigidbody2D rb;
 
     void Awake()
@@ -16,19 +13,16 @@ public class PlayerMovementLocal : MonoBehaviour
 
     void Update()
     {
+        // Only the local owner controls this player
+        if (!IsOwner) return;
+
         Vector2 input = Vector2.zero;
 
-        if (controls == ControlScheme.WASD)
-        {
-            input.x = (Input.GetKey(KeyCode.D) ? 1 : 0) - (Input.GetKey(KeyCode.A) ? 1 : 0);
-            input.y = (Input.GetKey(KeyCode.W) ? 1 : 0) - (Input.GetKey(KeyCode.S) ? 1 : 0);
-        }
-        else
-        {
-            input.x = (Input.GetKey(KeyCode.RightArrow) ? 1 : 0) - (Input.GetKey(KeyCode.LeftArrow) ? 1 : 0);
-            input.y = (Input.GetKey(KeyCode.UpArrow) ? 1 : 0) - (Input.GetKey(KeyCode.DownArrow) ? 1 : 0);
-        }
+        input.x = ((Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) ? 1 : 0)
+        - ((Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) ? 1 : 0);
 
+        input.y = ((Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) ? 1 : 0)
+        - ((Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) ? 1 : 0);
         rb.linearVelocity = input.normalized * speed;
     }
 }
