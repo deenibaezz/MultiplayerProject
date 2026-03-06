@@ -7,14 +7,23 @@ public class NetworkButtons : MonoBehaviour
     {
         if (NetworkManager.Singleton == null) return;
 
-        int w = 200, h = 50, pad = 10;
+        int w = 180;
+        int h = 45;
+        int pad = 15;
+
+        // Position buttons on top-right
+        float x = Screen.width - w - pad;
+        float y = pad;
+
+        GUIStyle style = new GUIStyle(GUI.skin.button);
+        style.fontSize = 16;
 
         if (!NetworkManager.Singleton.IsClient && !NetworkManager.Singleton.IsServer)
         {
-            if (GUI.Button(new Rect(pad, pad, w, h), "Start Host"))
+            if (GUI.Button(new Rect(x, y, w, h), "Start Host", style))
                 NetworkManager.Singleton.StartHost();
 
-            if (GUI.Button(new Rect(pad, pad + h + pad, w, h), "Start Client"))
+            if (GUI.Button(new Rect(x, y + h + pad, w, h), "Start Client", style))
                 NetworkManager.Singleton.StartClient();
         }
     }

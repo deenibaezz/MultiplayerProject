@@ -1,6 +1,10 @@
 using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using Unity.Collections;
+using System.Collections.Generic;
+using System.Text;
+
 
 public class RoundManagerNet : NetworkBehaviour
 {
@@ -16,6 +20,15 @@ public class RoundManagerNet : NetworkBehaviour
 
     [Header("Prefabs")]
     [SerializeField] private NetworkObject coinPrefab;
+
+    public NetworkVariable<int> CurrentRound = new NetworkVariable<int>(
+    0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+    public NetworkVariable<FixedString64Bytes> InfoMessage = new NetworkVariable<FixedString64Bytes>(
+    default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+    public NetworkVariable<bool> MatchOver = new NetworkVariable<bool>(
+    false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
     private int currentRound = 0;
     private NetworkObject activeCoin;
@@ -34,6 +47,10 @@ public class RoundManagerNet : NetworkBehaviour
         while (currentRound < totalRounds)
         {
             currentRound++;
+            CurrentRound.Value = currentRound;
+
+            InfoMessage.Value = "";     // clear center text at start of round
+            MatchOver.Value = false;
 
             SpawnCoin();
 
@@ -46,6 +63,9 @@ public class RoundManagerNet : NetworkBehaviour
             if (CheckEarlyWin())
                 break;
         }
+        MatchOver.Value = true;
+
+        EndMatchNet();
     }
 
     private void SpawnCoin()
@@ -86,4 +106,59 @@ public class RoundManagerNet : NetworkBehaviour
 
         return false;
     }
+    public void AnnounceRoundWinner(ulong winnerClientId)
+    {
+    // Runs on server because CoinNetPickup only calls this on server
+    InfoMessage.Value = $"Player {winnerClientId} won the round!";
+    }
+    private void EndMatchNet()
+{
+    // Build score list and determine winner(s)
+    int bestScore = int.MinValue;
+    List<ulong> winners = new List<ulong>();
+    var sb = new StringBuilder();
+
+    // Iterate connected clients (works on server)
+    foreach (var client in NetworkManager.Singleton.ConnectedClientsList)
+    {
+        var playerObj = client.PlayerObject;
+        if (playerObj == null) continue;
+
+        var ps = playerObj.GetComponent<PlayerScoreNet>();
+        if (ps == null) continue;
+
+        int sc = ps.Score.Value;
+        sb.AppendLine($"Player {ps.OwnerClientId}: {sc}");
+
+        if (sc > bestScore)
+        {
+            bestScore = sc;
+            winners.Clear();
+            winners.Add(ps.OwnerClientId);
+        }
+        else if (sc == bestScore)
+        {
+            winners.Add(ps.OwnerClientId);
+        }
+    }
+
+    string scoresText = sb.ToString().TrimEnd();
+
+    string final;
+    if (winners.Count > 1)
+    {
+        final = $"Match Tied!\nFinal Scores:\n{scoresText}";
+    }
+    else if (winners.Count == 1)
+    {
+        final = $"Player {winners[0]} wins!\nFinal Scores:\n{scoresText}";
+    }
+    else
+    {
+        // safety fallback
+        final = $"Match Over!\nFinal Scores:\n{scoresText}";
+    }
+
+    InfoMessage.Value = final;
+}
 }
