@@ -1,5 +1,4 @@
 using TMPro;
-using Unity.Netcode;
 using UnityEngine;
 
 public class RoundUINet : MonoBehaviour
@@ -18,9 +17,15 @@ public class RoundUINet : MonoBehaviour
             return;
         }
 
-        int r = rm.CurrentRound.Value;
+        // Round text
+        if (rm.MatchOver.Value)
+            roundText.text = "Match Over";
+        else if (rm.CurrentRound.Value == 0)
+            roundText.text = "Waiting for players...";
+        else
+            roundText.text = $"Round {rm.CurrentRound.Value}/{totalRounds}";
 
-        roundText.text = rm.MatchOver.Value ? "Match Over" : $"Round {r}/{totalRounds}";
+        // Center info text (instructions / round winner / final result)
         infoText.text = rm.InfoMessage.Value.ToString();
     }
 }

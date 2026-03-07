@@ -37,7 +37,27 @@ public class RoundManagerNet : NetworkBehaviour
     {
         // Only server runs the match loop
         if (IsServer)
-            StartCoroutine(RunMatch());
+            StartCoroutine(WaitForPlayersThenStart());
+    }
+
+    private IEnumerator WaitForPlayersThenStart()
+    {
+    // Wait until exactly 2 players are connected
+    while (NetworkManager.Singleton.ConnectedClientsIds.Count < 2)
+    {
+        InfoMessage.Value = "Waiting for Player 2...";
+        yield return null;
+    }
+
+    // Both connected: show instructions briefly
+    InfoMessage.Value = "Both players connected!\nGet the coin first!";
+    CurrentRound.Value = 0;
+    yield return new WaitForSeconds(1.5f);
+
+    InfoMessage.Value = "";
+    MatchOver.Value = false;
+
+    StartCoroutine(RunMatch());
     }
 
     private IEnumerator RunMatch()
@@ -109,7 +129,7 @@ public class RoundManagerNet : NetworkBehaviour
     public void AnnounceRoundWinner(ulong winnerClientId)
     {
     // Runs on server because CoinNetPickup only calls this on server
-    InfoMessage.Value = $"Player {winnerClientId} won the round!";
+    InfoMessage.Value = $"Player {winnerClientId + 1} won the round!";
     }
     private void EndMatchNet()
 {
@@ -128,7 +148,7 @@ public class RoundManagerNet : NetworkBehaviour
         if (ps == null) continue;
 
         int sc = ps.Score.Value;
-        sb.AppendLine($"Player {ps.OwnerClientId}: {sc}");
+        sb.AppendLine($"Player {ps.OwnerClientId + 1}: {sc}");
 
         if (sc > bestScore)
         {
@@ -151,7 +171,7 @@ public class RoundManagerNet : NetworkBehaviour
     }
     else if (winners.Count == 1)
     {
-        final = $"Player {winners[0]} wins!\nFinal Scores:\n{scoresText}";
+        final = $"Player {winners[0] + 1} wins!\nFinal Scores:\n{scoresText}";
     }
     else
     {
