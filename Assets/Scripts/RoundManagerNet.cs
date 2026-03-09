@@ -35,21 +35,21 @@ public class RoundManagerNet : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        // Only server runs the match loop
+        // only server runs the match loop
         if (IsServer)
             StartCoroutine(WaitForPlayersThenStart());
     }
 
     private IEnumerator WaitForPlayersThenStart()
     {
-    // Wait until exactly 2 players are connected
+    // wait until exactly 2 players are connected
     while (NetworkManager.Singleton.ConnectedClientsIds.Count < 2)
     {
         InfoMessage.Value = "Waiting for Player 2...";
         yield return null;
     }
 
-    // Both connected: show instructions briefly
+    // both connected then show instructions briefly
     InfoMessage.Value = "Both players connected!\nGet the coin first!";
     CurrentRound.Value = 0;
     yield return new WaitForSeconds(1.5f);
@@ -74,7 +74,7 @@ public class RoundManagerNet : NetworkBehaviour
 
             SpawnCoin();
 
-            // wait until coin is picked up (despawned)
+            // wait until coin is picked up
             while (activeCoin != null && activeCoin.IsSpawned)
                 yield return null;
 
@@ -88,6 +88,7 @@ public class RoundManagerNet : NetworkBehaviour
         EndMatchNet();
     }
 
+    // server spawns the coin so all clients receive it
     private void SpawnCoin()
     {
         if (activeCoin != null && activeCoin.IsSpawned)
@@ -110,6 +111,7 @@ public class RoundManagerNet : NetworkBehaviour
         return new(Random.Range(minPos.x, maxPos.x), Random.Range(minPos.y, maxPos.y));
     }
 
+    // first to majority early win check, server authoritative
     private bool CheckEarlyWin()
     {
         int needed = (totalRounds / 2) + 1;
@@ -128,17 +130,17 @@ public class RoundManagerNet : NetworkBehaviour
     }
     public void AnnounceRoundWinner(ulong winnerClientId)
     {
-    // Runs on server because CoinNetPickup only calls this on server
+    // runs on server because CoinNetPickup only calls this on server
     InfoMessage.Value = $"Player {winnerClientId + 1} won the round!";
     }
     private void EndMatchNet()
 {
-    // Build score list and determine winner(s)
+    // build score list and determine winner
     int bestScore = int.MinValue;
     List<ulong> winners = new List<ulong>();
     var sb = new StringBuilder();
 
-    // Iterate connected clients (works on server)
+    // iterate connected clients 
     foreach (var client in NetworkManager.Singleton.ConnectedClientsList)
     {
         var playerObj = client.PlayerObject;

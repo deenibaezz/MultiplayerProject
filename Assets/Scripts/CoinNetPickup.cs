@@ -5,20 +5,20 @@ public class CoinNetPickup : NetworkBehaviour
 {
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (!IsServer) return;
+        if (!IsServer) return; // server decides coin pickup
 
         var score = other.GetComponent<PlayerScoreNet>();
         if (score == null) return;
 
-        // Award point
+        // update score on server
         score.AddPointServerRpc();
 
-        // Notify RoundManager who won this round
+        // notify roundManager who won this round
         var rm = Object.FindFirstObjectByType<RoundManagerNet>();
         if (rm != null)
             rm.AnnounceRoundWinner(score.OwnerClientId);
 
-        // Despawn coin for everyone
+        // remove coin for all clients
         NetworkObject.Despawn(true);
     }
 }
